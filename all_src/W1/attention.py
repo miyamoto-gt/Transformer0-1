@@ -12,11 +12,15 @@ def init_weights(d, rng, scale=True):
     return [rng.normal(size=(d, d)) / s for _ in range(3)]
 
 
-def attention(x, W_q, W_k, W_v, div=None):
+def attention(x, W_q, W_k, W_v, div=None,mask=None):
     Q, K, V = x @ W_q, x @ W_k, x @ W_v
     scores = Q @ K.T
     if div is not None:
         scores = scores / div
+    if mask is not None:
+        scores=np.where(mask,scores,-np.inf)
+
+
     P = softmax(scores)
     return P @ V, P, scores
 
@@ -36,7 +40,27 @@ def compare_divisors(d, rng, scale=True):
 
 
 if __name__ == "__main__":
+    print("##################")
+    print("----attention----")
+    print("##################\n")
     rng = np.random.default_rng(0)
     compare_divisors(8, rng)
     compare_divisors(64, rng)
     compare_divisors(64, rng, scale=False)   
+    rng = np.random.default_rng(0)
+
+    #mask check
+    print("##################")
+    print("----add mask----")
+    print("##################")
+    d = 8
+    x = rng.normal(size=(4, d))
+    W_q, W_k, W_v = init_weights(d, rng)
+    mask = np.tril(np.ones((4, 4), dtype=bool))
+
+    out_m, P_m, _ = attention(x, W_q, W_k, W_v, div=np.sqrt(d), mask=mask)
+    out_n, P_n, _ = attention(x, W_q, W_k, W_v, div=np.sqrt(d))
+
+    print(P_m.round(3))
+    print("row sums:", P_m.sum(axis=-1))
+    print("out changed:", not np.allclose(out_m, out_n))
