@@ -1,0 +1,27 @@
+{
+  "name": "transformer0-1",
+  "version": "1.0.0",
+  "description": "| | | |---|---| | 目標 | numpy で Attention の順伝播を書く | | 成果物 | 4トークン×次元8 の重み行列を出力するコード | | 記事 | 「Attention を手計算してみた」 |",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miyamoto-gt/Transformer0-1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/miyamoto-gt/Transformer0-1/issues"
+  },
+  "homepage": "https://github.com/miyamoto-gt/Transformer0-1#readme",
+  "dependencies": {
+    "zenn-cli": "^0.5.3"
+  }
+}
