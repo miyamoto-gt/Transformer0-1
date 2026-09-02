@@ -1,4 +1,11 @@
+# Python
 .venv/
 __pycache__/
 .pytest_cache/
-docs/w1/img/
+*.pyc
+
+# Node / zenn-cli
+node_modules/
+
+# OS
+.DS_Store
