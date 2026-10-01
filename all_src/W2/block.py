@@ -16,7 +16,7 @@ class Block(torch.nn.Module):
             a, _, _ = self.attn(self.ln1(x))
             x = x + a
             x = x + self.ffn(self.ln2(x))
-        else:
+        else:# POST-LN
             a, _, _ = self.attn(x)
             x = self.ln1(x + a)          # 足してから正規化
             x = self.ln2(x + self.ffn(x))
