@@ -583,15 +583,3 @@ uv run python compare_attn.py     # loss とAttentionの重みを2軸で
   http://karpathy.github.io/2019/04/25/recipe/
 - Andrej Karpathy, *nanoGPT*
   https://github.com/karpathy/nanoGPT
-
-## 未了
-
-- **層数を変えて #5 を再実験**(1層・2層・8層)。残差の必要性が深さに
-  どう依存するか。4層では致命的だったが、1層なら積み上げが不要なので
-  差が出ないはず。`build_model()` に `layers` 引数を足せば実装できる。
-  性質としては「壊す実験」ではなく「設計の比較」なので、W3の本体とは
-  分けて扱う。
-- 履歴を JSON 保存し、全条件を1枚に重ねる `plot.py`。
-  ただし7本重ねると見づらいので、2本比較(`compare_mask.py` 方式)の
-  ほうが有効かもしれない。
-- #6 の早期終了(iter 75 で止めた場合の生成文)。実装は W5(評価設計)の範囲。
