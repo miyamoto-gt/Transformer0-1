@@ -26,20 +26,26 @@ train, val, stoi, itos = load_data(os.path.join(W2_DIR, "data", "input.txt"))
 V = len(stoi)
 
 
-def get_batch(data):
-    ix = torch.randint(len(data) - block_size, (batch_size,))
+def get_batch(data,generator=None):
+    ix = torch.randint(len(data) - block_size, (batch_size,), generator=generator)
     x = torch.stack([data[i:i + block_size] for i in ix])
     y = torch.stack([data[i + 1:i + block_size + 1] for i in ix])
     return x, y
 
+def make_eval_batches(data,seed):
+    generator= torch.Generator()
+    generator.manual_seed(seed)
+    batches=[]
+    for _ in range(eval_iters):
+        batches.append(get_batch(data,generator=generator))
+    return batches
 
 @torch.no_grad()
-def evaluate(m,data):
-    """共通の物差し: 渡したデータ(train / val)の CE と正解率を測る"""
+def evaluate(m,batches):
+    """共通の物差し: 渡した評価バッチの CE と正解率を測る"""
     m.eval()
     ces, accs = [], []
-    for _ in range(eval_iters):
-        x, y = get_batch(data)
+    for x,y in batches:
         logits, _ = m(x)                                   # targets なし → (B, T, V)
         ces.append(F.cross_entropy(logits.reshape(-1, V), y.reshape(-1)).item())
         accs.append((logits.argmax(-1) == y).float().mean().item())
@@ -48,6 +54,10 @@ def evaluate(m,data):
 
 
 def run(loss_fn, tag, lr=lr,weight_decay=0):
+    run_dir=os.path.join(out_dir,tag)
+    os.makedirs(run_dir,exist_ok=True)
+    train_eval_batches=make_eval_batches(train, seed)
+    val_eval_batches=make_eval_batches(val, seed)
     torch.manual_seed(seed)
     m = GPTMini(V, d_model, block_size, n_layer)
     opt = torch.optim.AdamW(m.parameters(), lr=lr, weight_decay=weight_decay)  # adamW で学習するのが W2 の train.py と同じ
@@ -63,18 +73,18 @@ def run(loss_fn, tag, lr=lr,weight_decay=0):
 
         if it % eval_interval== 0:
             gnorm = m.lm_head.weight.grad.norm().item()  # ← 出力層の名前が違えば直す
-            tce,tacc=evaluate(m,train)
-            vce,vacc=evaluate(m,val)
+            tce,tacc=evaluate(m,train_eval_batches)
+            vce,vacc=evaluate(m,val_eval_batches)
             rows.append([it, tce,tacc, vce, vacc, gnorm])
             print(f"[{tag}] {it:>5} | {tce:>8.4f} | {tacc:>7.3f} | {vce:>7.4f} | {vacc:>7.3f} | {gnorm:>10.2e}")
 
         opt.step()
 
-    with open(os.path.join(out_dir, f"log_{tag}.csv"), "w", newline="") as f:
+    with open(os.path.join(run_dir, f"log_{tag}.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["iter", "train_ce", "train_acc", "val_ce", "val_acc", "lm_head_grad"])
         w.writerows(rows)
-    torch.save(m.state_dict(), os.path.join(out_dir, f"ckpt_{tag}.pt"))
+    torch.save(m.state_dict(), os.path.join(run_dir, f"ckpt_{tag}.pt"))
 
     # 生成サンプル(T=1.0)
     m.eval()
@@ -85,5 +95,5 @@ def run(loss_fn, tag, lr=lr,weight_decay=0):
             logits, _ = m(idx[:, -block_size:])
             probs = torch.softmax(logits[:, -1, :], dim=-1)
             idx = torch.cat((idx, torch.multinomial(probs, 1)), dim=1)
-    with open(os.path.join(out_dir, f"sample_{tag}.txt"), "w") as f:
+    with open(os.path.join(run_dir, f"sample_{tag}.txt"), "w") as f:
         f.write("".join(itos[i.item()] for i in idx[0]))
