@@ -15,8 +15,7 @@ from data_utils import load_data
 # ---- 固定する設定(W2 と同じ値にそろえる) --------------------------------
 lr = 1e-3           # ← W2 の train.py の学習率に合わせる
 block_size, batch_size =32, 32
-d_model, n_layer = 64, 4             # GPTMini の4つ目の引数
-max_iters, eval_interval, eval_iters = 3000, 300, 50
+eval_iters=50
 seed = 0
 
 out_dir = os.path.join(current_dir, "temp")
@@ -53,10 +52,13 @@ def evaluate(m,batches):
     return sum(ces) / len(ces), sum(accs) / len(accs)
 
 
-def run(loss_fn, tag, lr=lr,weight_decay=0):
+def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,eval_interval=150,train_frac=1.0):
+    train_range=int(len(train)*train_frac)
+    train_data=train[:train_range]
+    print(len(train_data))
     run_dir=os.path.join(out_dir,tag)
     os.makedirs(run_dir,exist_ok=True)
-    train_eval_batches=make_eval_batches(train, seed)
+    train_eval_batches=make_eval_batches(train_data, seed)
     val_eval_batches=make_eval_batches(val, seed)
     torch.manual_seed(seed)
     m = GPTMini(V, d_model, block_size, n_layer)
@@ -65,7 +67,7 @@ def run(loss_fn, tag, lr=lr,weight_decay=0):
     rows = []
     print(f"[{tag}] {'iter':>5} | {'train CE':>8} | {'train acc':>9} | {'val CE':>7} | {'val acc':>7} | {'lm_head勾配':>10}")
     for it in range(max_iters + 1):
-        x, y = get_batch(train)
+        x, y = get_batch(train_data)
         logits, _ = m(x)
         loss = loss_fn(logits, y)
         opt.zero_grad()
