@@ -55,7 +55,7 @@ def evaluate(m,batches):
 def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,eval_interval=150,train_frac=1.0):
     train_range=int(len(train)*train_frac)
     train_data=train[:train_range]
-    print(len(train_data))
+    print("Train data size:", len(train_data))
     run_dir=os.path.join(out_dir,tag)
     os.makedirs(run_dir,exist_ok=True)
     train_eval_batches=make_eval_batches(train_data, seed)
