@@ -11,6 +11,8 @@ import torch
 import torch.nn.functional as F
 from model import GPTMini
 from data_utils import load_data
+from feat_model import FeatureModel
+
 
 # ---- 固定する設定(W2 と同じ値にそろえる) --------------------------------
 lr = 1e-3           # ← W2 の train.py の学習率に合わせる
@@ -29,7 +31,7 @@ def get_batch(data,generator=None):
     ix = torch.randint(len(data) - block_size, (batch_size,), generator=generator)
     x = torch.stack([data[i:i + block_size] for i in ix])
     y = torch.stack([data[i + 1:i + block_size + 1] for i in ix])
-    return x, y
+    return x, y,ix
 
 def make_eval_batches(data,seed):
     generator= torch.Generator()
@@ -40,19 +42,23 @@ def make_eval_batches(data,seed):
     return batches
 
 @torch.no_grad()
-def evaluate(m,batches):
+def evaluate(m,batches,interval_width=None):
     """共通の物差し: 渡した評価バッチの CE と正解率を測る"""
     m.eval()
     ces, accs = [], []
-    for x,y in batches:
-        logits, _ = m(x)                                   # targets なし → (B, T, V)
+    for x,y,ix in batches:
+        if interval_width is None:
+            logits, _ = m(x)
+        else:
+            interval=ix//interval_width
+            logits, _ = m(x,interval=interval)                                  # targets なし → (B, T, V)
         ces.append(F.cross_entropy(logits.reshape(-1, V), y.reshape(-1)).item())
         accs.append((logits.argmax(-1) == y).float().mean().item())
     m.train()
     return sum(ces) / len(ces), sum(accs) / len(accs)
 
 
-def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,eval_interval=150,train_frac=1.0):
+def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,eval_interval=150,train_frac=1.0,interval_width=None):
     train_range=int(len(train)*train_frac)
     train_data=train[:train_range]
     print("Train data size:", len(train_data))
@@ -61,22 +67,30 @@ def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,e
     train_eval_batches=make_eval_batches(train_data, seed)
     val_eval_batches=make_eval_batches(val, seed)
     torch.manual_seed(seed)
-    m = GPTMini(V, d_model, block_size, n_layer)
+    if interval_width is None:
+        m = GPTMini(V, d_model, block_size, n_layer)
+    else:
+        num_interval=max(len(train_data),len(val))//interval_width+1#区間IDが０から数え始めるため、０からカウント
+        m = FeatureModel(V, d_model, block_size, n_layer, num_interval)
     opt = torch.optim.AdamW(m.parameters(), lr=lr, weight_decay=weight_decay)  # adamW で学習するのが W2 の train.py と同じ
     print("weight_decay:",opt.param_groups[0]['weight_decay'])  # weight_decay の値を確認する
     rows = []
     print(f"[{tag}] {'iter':>5} | {'train CE':>8} | {'train acc':>9} | {'val CE':>7} | {'val acc':>7} | {'lm_head勾配':>10}")
     for it in range(max_iters + 1):
-        x, y = get_batch(train_data)
-        logits, _ = m(x)
+        x, y,ix= get_batch(train_data)
+        if interval_width is None:
+            logits, _ = m(x)
+        else:
+            interval=ix//interval_width
+            logits, _ = m(x,interval=interval) 
         loss = loss_fn(logits, y)
         opt.zero_grad()
         loss.backward()
 
         if it % eval_interval== 0:
-            gnorm = m.lm_head.weight.grad.norm().item()  # ← 出力層の名前が違えば直す
-            tce,tacc=evaluate(m,train_eval_batches)
-            vce,vacc=evaluate(m,val_eval_batches)
+            gnorm = m.lm_head.weight.grad.norm().item()  
+            tce,tacc=evaluate(m,train_eval_batches,interval_width)
+            vce,vacc=evaluate(m,val_eval_batches,interval_width)
             rows.append([it, tce,tacc, vce, vacc, gnorm])
             print(f"[{tag}] {it:>5} | {tce:>8.4f} | {tacc:>7.3f} | {vce:>7.4f} | {vacc:>7.3f} | {gnorm:>10.2e}")
 
