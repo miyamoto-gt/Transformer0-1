@@ -12,8 +12,8 @@ class FeatureModel(GPTMini):
     def __init__(self,V,d_model,block_size,n_layer,num_intervals):
         super().__init__(V,d_model,block_size,n_layer)
         self.num_intervals=num_intervals
-        self.interval_emb=nn.Embedding(num_intervals,d_model)
-
+        with torch.random.fork_rng():# 乱数シードを固定して初期化
+            self.interval_emb=nn.Embedding(num_intervals,d_model)
     def forward(self, idx, targets=None,interval=None):
         B, T = idx.shape
         pos = torch.arange(T, device=idx.device)
@@ -32,9 +32,10 @@ class FeatureModel(GPTMini):
         )
         return logits, loss
 if __name__ == "__main__":
-    for B in [2, 32]:
-        m = FeatureModel(65, 64, 32, 4, 10)          # V, d_model, block_size, n_layer, 区間の数
-        idx = torch.randint(0, 65, (B, 32))          # 文字ID (B, T)
-        interval = torch.randint(0, 10, (B,))        # 区間ID (B,)
-        logits, _ = m(idx, interval=interval)
-        print("logits:", logits.shape)
+    torch.manual_seed(0)
+    base = GPTMini(65, 64, 32, 4)
+    print("GPTMini     :", torch.randint(100000, (5,)))
+
+    torch.manual_seed(0)
+    rand = FeatureModel(65, 64, 32, 4, 112)
+    print("FeatureModel:", torch.randint(100000, (5,)))
