@@ -42,23 +42,22 @@ def make_eval_batches(data,seed):
     return batches
 
 @torch.no_grad()
-def evaluate(m,batches,interval_width=None):
+def evaluate(m,batches,intervals=None):
     """共通の物差し: 渡した評価バッチの CE と正解率を測る"""
     m.eval()
     ces, accs = [], []
-    for x,y,ix in batches:
-        if interval_width is None:
+    for i,(x,y,ix) in enumerate(batches):
+        if intervals is None:
             logits, _ = m(x)
         else:
-            interval=ix//interval_width
-            logits, _ = m(x,interval=interval)                                  # targets なし → (B, T, V)
+            logits, _ = m(x,interval=intervals[i])                                  # targets なし → (B, T, V)
         ces.append(F.cross_entropy(logits.reshape(-1, V), y.reshape(-1)).item())
         accs.append((logits.argmax(-1) == y).float().mean().item())
     m.train()
     return sum(ces) / len(ces), sum(accs) / len(accs)
 
 
-def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,eval_interval=150,train_frac=1.0,interval_width=None):
+def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,eval_interval=150,train_frac=1.0,interval_width=None,interval_mode="pos"):
     train_range=int(len(train)*train_frac)
     train_data=train[:train_range]
     print("Train data size:", len(train_data))
@@ -66,12 +65,27 @@ def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,e
     os.makedirs(run_dir,exist_ok=True)
     train_eval_batches=make_eval_batches(train_data, seed)
     val_eval_batches=make_eval_batches(val, seed)
+    num_interval = None
+    if interval_width is not None:
+        num_interval=max(len(train_data),len(val))//interval_width+1 #区間IDが０から数え始めるため、０からカウント
+    if interval_width is None:
+        train_eval_intervals = None
+        val_eval_intervals = None
+    elif interval_mode == "pos":
+        train_eval_intervals = [ix // interval_width for x, y, ix in train_eval_batches]
+        val_eval_intervals   = [ix // interval_width for x, y, ix in val_eval_batches]
+    else:
+        eval_noise = torch.Generator()
+        eval_noise.manual_seed(seed+1)
+        train_eval_intervals = [torch.randint(0,num_interval, (batch_size,),generator=eval_noise) for x, y, ix in train_eval_batches]
+        val_eval_intervals   = [torch.randint(0,num_interval, (batch_size,),generator=eval_noise) for x, y, ix in val_eval_batches]
     torch.manual_seed(seed)
     if interval_width is None:
         m = GPTMini(V, d_model, block_size, n_layer)
     else:
-        num_interval=max(len(train_data),len(val))//interval_width+1#区間IDが０から数え始めるため、０からカウント
         m = FeatureModel(V, d_model, block_size, n_layer, num_interval)
+    interval_train=torch.Generator()
+    interval_train.manual_seed(seed+2)
     opt = torch.optim.AdamW(m.parameters(), lr=lr, weight_decay=weight_decay)  # adamW で学習するのが W2 の train.py と同じ
     print("weight_decay:",opt.param_groups[0]['weight_decay'])  # weight_decay の値を確認する
     rows = []
@@ -80,17 +94,20 @@ def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,e
         x, y,ix= get_batch(train_data)
         if interval_width is None:
             logits, _ = m(x)
-        else:
+        elif interval_mode=="pos":
             interval=ix//interval_width
             logits, _ = m(x,interval=interval) 
+        else:
+            interval=torch.randint(0,num_interval, (batch_size,),generator=interval_train)
+            logits, _ = m(x,interval=interval)
         loss = loss_fn(logits, y)
         opt.zero_grad()
         loss.backward()
 
         if it % eval_interval== 0:
             gnorm = m.lm_head.weight.grad.norm().item()  
-            tce,tacc=evaluate(m,train_eval_batches,interval_width)
-            vce,vacc=evaluate(m,val_eval_batches,interval_width)
+            tce,tacc=evaluate(m,train_eval_batches,train_eval_intervals)
+            vce,vacc=evaluate(m,val_eval_batches,val_eval_intervals)
             rows.append([it, tce,tacc, vce, vacc, gnorm])
             print(f"[{tag}] {it:>5} | {tce:>8.4f} | {tacc:>7.3f} | {vce:>7.4f} | {vacc:>7.3f} | {gnorm:>10.2e}")
 
