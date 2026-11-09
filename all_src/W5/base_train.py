@@ -57,7 +57,11 @@ def evaluate(m,batches,intervals=None):
     return sum(ces) / len(ces), sum(accs) / len(accs)
 
 
-def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,eval_interval=150,train_frac=1.0,interval_width=None,interval_mode="pos"):
+def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,
+        eval_interval=150,train_frac=1.0,interval_width=None,interval_mode="pos",patience=None,min_delta=0.02):
+    count =0
+    best_iter=0
+    min_loss = float("inf")
     train_range=int(len(train)*train_frac)
     train_data=train[:train_range]
     print("Train data size:", len(train_data))
@@ -90,7 +94,7 @@ def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,e
     print("weight_decay:",opt.param_groups[0]['weight_decay'])  # weight_decay の値を確認する
     rows = []
     print(f"[{tag}] {'iter':>5} | {'train CE':>8} | {'train acc':>9} | {'val CE':>7} | {'val acc':>7} | {'lm_head勾配':>10}")
-    for it in range(max_iters + 1):
+    for it in range(max_iters + 1): 
         x, y,ix= get_batch(train_data)
         if interval_width is None:
             logits, _ = m(x)
@@ -110,15 +114,29 @@ def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,e
             vce,vacc=evaluate(m,val_eval_batches,val_eval_intervals)
             rows.append([it, tce,tacc, vce, vacc, gnorm])
             print(f"[{tag}] {it:>5} | {tce:>8.4f} | {tacc:>7.3f} | {vce:>7.4f} | {vacc:>7.3f} | {gnorm:>10.2e}")
-
+            min_loss = min(min_loss,vce)
+            if vce==min_loss:
+                count=0
+                best_iter=it
+                torch.save(m.state_dict(), os.path.join(run_dir, f"ckpt_best_{tag}.pt"))
+            else:
+                count+=1
+            print(f"{best_iter:>5}iter | min_loss:{min_loss:>.4f} | count:{count:>1}")
+            if patience is not None and count>=patience and vce-min_loss >= min_delta:
+                break
         opt.step()
-
+    
+    
     with open(os.path.join(run_dir, f"log_{tag}.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["iter", "train_ce", "train_acc", "val_ce", "val_acc", "lm_head_grad"])
         w.writerows(rows)
     torch.save(m.state_dict(), os.path.join(run_dir, f"ckpt_{tag}.pt"))
 
+    pt_contents=torch.load(os.path.join(run_dir, f"ckpt_best_{tag}.pt"))
+    m.load_state_dict(pt_contents)
+    bce, bacc=evaluate(m, val_eval_batches, val_eval_intervals)
+    print(bce)
     # 生成サンプル(T=1.0)
     m.eval()
     torch.manual_seed(0)
