@@ -1,4 +1,4 @@
-# モデルの複雑化
+# 早期終了
 import torch.nn.functional as F
 from base_train import run,V
 def loss_fn(logits, y):
