@@ -14,7 +14,7 @@
 - softmax → V と掛ける
 
 **チェック**：softmax 後の 4×4 行列の各行の合計が 1 になっているか。
-
+zenn:[W1_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w1)
 ---
 
 ### Week 2｜小さな Transformer を完成させる
@@ -30,7 +30,7 @@
 - 損失が下がることだけ確認する
 
 **チェック**：損失が下がり、出力が完全なランダムでなくなっているか。
-
+zenn:[W2_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w2)
 ---
 
 ### Week 3｜壊して観察する【重要】
@@ -52,8 +52,9 @@
 | 位置エンコーディングを外す | 語順が消える |
 | 初期化を大きく | 最初から壊れる |
 
-**この週が計画全体で一番リターンが大きい。省略しない。**
-
+zenn:[W3_article_01](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-1)
+zenn:[W3_article_02](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-2)
+zenn:[W3_article_03](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-3)
 ---
 
 ### Week 4｜損失関数と出口を差し替える
@@ -68,8 +69,7 @@
 - 線形出力 + MSE（回帰）
 - temperature を 0.1 / 1.0 / 2.0 で比較
 
-※ 週半ばに外出予定があるため、この週は負荷を軽めに設定。遅れたら Week 5 に送る。
-
+zenn:[W4_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w4)
 ---
 
 ### Week 5｜過学習と評価設計
@@ -84,8 +84,7 @@
 - 訓練損失と検証損失が乖離する瞬間を見る
 - 早期終了、Dropout、データ増量の効果を比べる
 
-**チェック**：検証データが訓練データと混ざっていないか（リークの確認）。
-
+zenn:[W5_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w5)
 ---
 
 ### Week 6｜トークン化と画像入力
