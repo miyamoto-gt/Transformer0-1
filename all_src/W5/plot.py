@@ -57,7 +57,7 @@ name = "curve_" + "_".join(tags) + ".png"
 if len(tags) == 1:
     out = os.path.join(out_dir, tags[0], name)
 else:
-    compare_dir = os.path.join(out_dir, "compare")
+    compare_dir = os.path.join(out_dir, "articles")
     os.makedirs(compare_dir, exist_ok=True)
     out = os.path.join(compare_dir, name)
 plt.savefig(out, dpi=150, bbox_inches="tight")   # 外に出した凡例が切れないように
