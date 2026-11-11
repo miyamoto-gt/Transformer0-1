@@ -13,8 +13,7 @@
 - √d で割る／割らないを比べる（softmax の尖り方の違いを見る）
 - softmax → V と掛ける
 
-**チェック**：softmax 後の 4×4 行列の各行の合計が 1 になっているか。
-zenn:[W1_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w1)
+- zenn:[W1_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w1)
 ---
 
 ### Week 2｜小さな Transformer を完成させる
@@ -29,8 +28,7 @@ zenn:[W1_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w1)
 - データはテキストファイル1つ（数百KB程度）
 - 損失が下がることだけ確認する
 
-**チェック**：損失が下がり、出力が完全なランダムでなくなっているか。
-zenn:[W2_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w2)
+- zenn:[W2_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w2)
 ---
 
 ### Week 3｜壊して観察する【重要】
@@ -52,9 +50,9 @@ zenn:[W2_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w2)
 | 位置エンコーディングを外す | 語順が消える |
 | 初期化を大きく | 最初から壊れる |
 
-zenn:[W3_article_01](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-1)
-zenn:[W3_article_02](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-2)
-zenn:[W3_article_03](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-3)
+- zenn:[W3_article_01](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-1)
+- zenn:[W3_article_02](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-2)
+- zenn:[W3_article_03](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-3)
 ---
 
 ### Week 4｜損失関数と出口を差し替える
@@ -69,7 +67,7 @@ zenn:[W3_article_03](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w3-3)
 - 線形出力 + MSE（回帰）
 - temperature を 0.1 / 1.0 / 2.0 で比較
 
-zenn:[W4_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w4)
+- zenn:[W4_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w4)
 ---
 
 ### Week 5｜過学習と評価設計
@@ -84,7 +82,7 @@ zenn:[W4_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w4)
 - 訓練損失と検証損失が乖離する瞬間を見る
 - 早期終了、Dropout、データ増量の効果を比べる
 
-zenn:[W5_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w5)
+- zenn:[W5_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w5)
 ---
 
 ### Week 6｜トークン化と画像入力
