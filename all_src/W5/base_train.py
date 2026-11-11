@@ -12,6 +12,7 @@ import torch.nn.functional as F
 from model import GPTMini
 from data_utils import load_data
 from feat_model import FeatureModel
+from dropout_model import DropoutModel
 
 
 # ---- 固定する設定(W2 と同じ値にそろえる) --------------------------------
@@ -57,8 +58,8 @@ def evaluate(m,batches,intervals=None):
     return sum(ces) / len(ces), sum(accs) / len(accs)
 
 
-def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,
-        eval_interval=150,train_frac=1.0,interval_width=None,interval_mode="pos",patience=None,min_delta=0.02):
+def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,eval_interval=150,
+        train_frac=1.0,interval_width=None,interval_mode="pos",patience=None,min_delta=0.02,dropout=None):
     count =0
     best_iter=0
     min_loss = float("inf")
@@ -84,10 +85,12 @@ def run(loss_fn, tag, lr=lr,weight_decay=0,d_model=64,n_layer=4,max_iters=3000,
         train_eval_intervals = [torch.randint(0,num_interval, (batch_size,),generator=eval_noise) for x, y, ix in train_eval_batches]
         val_eval_intervals   = [torch.randint(0,num_interval, (batch_size,),generator=eval_noise) for x, y, ix in val_eval_batches]
     torch.manual_seed(seed)
-    if interval_width is None:
-        m = GPTMini(V, d_model, block_size, n_layer)
+    if interval_width is not None:
+        m= FeatureModel(V,d_model,block_size,n_layer,num_interval)
+    elif dropout is not None:
+        m=DropoutModel(V,d_model,block_size,n_layer,dropout)
     else:
-        m = FeatureModel(V, d_model, block_size, n_layer, num_interval)
+        m=GPTMini(V, d_model, block_size, n_layer)
     interval_train=torch.Generator()
     interval_train.manual_seed(seed+2)
     opt = torch.optim.AdamW(m.parameters(), lr=lr, weight_decay=weight_decay)  # adamW で学習するのが W2 の train.py と同じ
