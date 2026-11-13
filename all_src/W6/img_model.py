@@ -18,6 +18,23 @@ class ImgMini(nn.Module):
         self.blocks=nn.ModuleList([Block(d_model, n_patches) for _ in range(n_layer)])
         self.ln_f=LayerNorm(d_model)
         self.head=nn.Linear(d_model, n_class)
+
+
+    def forward(self, x,targets=None):
+            x = self.patch_emb(x)
+            patches=self.patchify(x)
+            self.pos_emb = torch.arange(patches, device=x.device)
+            for blk in self.blocks:
+                self.ln_f
+                x[:, -1]
+                self.head
+                if  targets is None:
+
+                else:
+                     F.cross_entropy(logits,targets)
+                     
+
+            
 if __name__ == "__main__":
     model = ImgMini(28, 7, 1, 64, n_layer=4)
     print(sum(p.numel() for p in model.parameters()))
