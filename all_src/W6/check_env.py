@@ -74,7 +74,7 @@ sys.path.insert(0, W2_DIR)
 
 import torch
 import torch.nn.functional as F
-import model  
+import model
 try: # noqa: F401
     print("W2 model.py import OK:", [n for n in dir(model) if not n.startswith("_")])
 except Exception as e:
