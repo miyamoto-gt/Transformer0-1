@@ -43,4 +43,5 @@ if __name__ == "__main__":
     x = torch.randn(256, 1, 28, 28)
     y = torch.randint(0, 10, (256,))
     logits, loss = model(x, y)
-    print(logits.shape, loss.item())
+    print(logits.shape,)
+    print(f"loss(ln10):{loss.item()}")
