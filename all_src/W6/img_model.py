@@ -9,6 +9,7 @@ sys.path.insert(0, W2_DIR)
 from block import Block
 from layernorm import LayerNorm
 from patch_embed import Embed
+from data_img import get_batch
 
 class ImgMini(nn.Module):
     def __init__(self,img_size, patch_size, in_ch, d_model, n_layer, n_class=10):
@@ -40,8 +41,7 @@ class ImgMini(nn.Module):
 if __name__ == "__main__":
     model = ImgMini(28, 7, 1, 64, n_layer=4)
     print(sum(p.numel() for p in model.parameters()))
-    x = torch.randn(256, 1, 28, 28)
-    y = torch.randint(0, 10, (256,))
+    x,y=get_batch("train",256)
     logits, loss = model(x, y)
     print(logits.shape,)
     print(f"loss(ln10):{loss.item()}")
