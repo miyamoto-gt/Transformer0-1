@@ -13,3 +13,6 @@ books/
 
 # weights
 *.pt
+
+# 画像データ
+data/
