@@ -39,9 +39,10 @@ def pieces(tok_name,s):
         return tok.convert_ids_to_tokens(ids)
     else:
             raise ValueError(f"nameは tiktoken llmjp のどれか: {tok_name}")
+# 3つの文を、文字数・バイト数・各トークナイザのトークン数で比べる(char(W2) は語彙にない文字も表示)
 print(f"{'text':>4} | {'chars':>5} | {'bytes':>5} | {'char(W2)':>8} | {'tiktoken':>8} | {'llm-jp':>6} | {'missing':>7} | {'missing_text'} ")
 stoi, enc, tok = load_tokenizers()
-# 3つの文を、文字数・バイト数・各トークナイザのトークン数で比べる(char(W2) は語彙にない文字も表示)
+
 for name,s in samples.items():
     c=count("char", s)
     t=count("tiktoken", s)
