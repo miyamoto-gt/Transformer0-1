@@ -96,6 +96,8 @@
 - トークナイザを2〜3種類比較（日本語とコードの分割を見る）
 - 画像を格子に切って、各パッチを1トークンにする
 - 胴体は Week 2 のものをそのまま使う
+  
+- zenn:[W5_article](https://zenn.dev/miyamoto_gt/articles/transformer-0-1-w6)
 
 ---
 
